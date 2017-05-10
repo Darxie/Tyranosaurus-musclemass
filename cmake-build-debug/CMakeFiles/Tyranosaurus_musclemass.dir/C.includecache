@@ -1,0 +1,18 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/Feldo/Documents/GitHub/Tyranosaurus-musclemass/main.c
+stdio.h
+-
+stdlib.h
+-
+string.h
+-
+afxres.h
+-
+
