@@ -1,5 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <afxres.h>
+
+#define MAX 30
 
 #pragma pack(push, 1)
 struct BitmapFileHeader {
@@ -25,10 +29,8 @@ struct BitmapInfoHeader {
     unsigned long biClrImportant;
 };
 
-void write_head(FILE *f, int width, int height)
-{
-    if (width % 4 != 0 || height % 4 != 0)
-    {
+void write_head(FILE *f, int width, int height) {
+    if (width % 4 != 0 || height % 4 != 0) {
         printf("Chyba: Vyska a sirka nie su delitelne 4.\n");
         return;
     }
@@ -56,33 +58,110 @@ void write_head(FILE *f, int width, int height)
     fwrite(&bih, sizeof(struct BitmapInfoHeader), 1, f);
 }
 
-void write_pixel(FILE *f, unsigned char r, unsigned char g, unsigned char b)
-{
+void write_pixel(FILE *f, unsigned char r, unsigned char g, unsigned char b) {
     fwrite(&r, 1, 1, f);
     fwrite(&g, 1, 1, f);
     fwrite(&b, 1, 1, f);
 }
+
+char **grid;
+int width = 0, height = 0;
 int color[205][205];
 char map[205][205];
-int rgb[100][3];
+int rgb[255][3];
+
+
+int hladaj(int r, int s, int c) {
+    if (r < 0 || r >= MAX || s < 0 || s >= MAX || grid[r][s] != '.' || color[r][s]) {
+        return 0;
+    }
+    color[r][s] = c;
+    hladaj(r + 1, s, c);
+    hladaj(r - 1, s, c);
+    hladaj(r, s + 1, c);
+    hladaj(r, s - 1, c);
+    return 1;
+}
+
+char **printGrid(char **grid, int vys, int sir) {
+    int i, j, q, x;
+    printf("pecen\n");
+    char **bip = (char **) malloc(vys * 4 * sizeof(char *));
+    for (i = 0; i < vys * 4; i++) {
+        bip[i] = (char *) malloc(sir * 4 * sizeof(char));
+        for (j = 0; j < sir * 4; j++) {
+            bip[i][j] = 0;
+        }
+    }
+
+
+    for (i = 0; i < vys; i++) {
+        for (j = 0; j < sir; j++) {
+            printf("%c", grid[i][j]);
+            for (q = 0; q < 4; q++)
+                for (x = 0; x < 4; x++) {
+                    bip[i * 4 + q][j * 4 + x] = grid[i][j];
+                }
+        }
+        printf("\n");
+    }
+    return bip;
+}
+
 
 // ukazkove kreslenie BMP obrazku
-void obrazok(char *nazov_suboru)
-{
+void obrazok(char *nazov_suboru) {
+
     FILE *f = fopen(nazov_suboru, "wb");
-    int w = 200, h = 100;
+//ToDo premenna na 4
+    int w = 4 * width, h = 4 * height;
+    int i = 0, j = 0;
+    int c = color[i][j];
     write_head(f, w, h);
-
+    for (i = 0; i < 255; i++) {
+        rgb[i][0] = rand() % 256;
+        rgb[i][1] = rand() % 256;
+        rgb[i][2] = rand() % 256;
+    }
+    int k = 1;
+    for (i = 0; i < width; i++) {
+        for (j = 0; j < height; j++)
+            if (hladaj(i, j, k))
+                k++;
+    }
+    char **bip = printGrid(grid, width, height);
+    printf("TU\n");
     int x, y;
-    for (y = 0; y < h; y++)
-        for (x = 0; x < w; x++)
-            write_pixel(f, 255, 0, 128);
-
+    for (y = h - 1; y > -1; y--)
+        for (x = 0; x < w; x++) {
+            //write_pixel(f, 0, 0, 255);
+            switch (bip[y][x]) {
+                case 'T':
+                    write_pixel(f, 0, 0, 255);
+                    break;
+                case 'X':
+                    write_pixel(f, 255, 0, 0);
+                    break;
+                case '#':
+                    write_pixel(f, 30, 30, 30);
+                    break;
+                case '.':
+                    write_pixel(f, 255, 255, 255);
+                    break;
+                default:
+                    if ((bip[y][x] >= 'A' && bip[y][x] <= 'Z') || (bip[y][x] >= 'a' && bip[y][x] <= 'z')) {
+                        write_pixel(f, 128, 128, 128);
+                    } else {
+                        write_pixel(f, rgb[bip[y][x]][0], rgb[bip[y][x]][1], rgb[bip[y][x]][2]);
+                    }
+                    break;
+            }
+        }
     fclose(f);
 }
 
-char **grid;
-int width, height;
+
+//int width, height;
 
 // vsetky metody pre node
 
@@ -173,103 +252,31 @@ void printQueueLenDvere(struct Queue q) {
 
 //pomocne funkcie ktore neviem ci budes potrebovat
 
-void nacitajVstup() {
-    grid[1][2] = '#';
-    grid[2][2] = '#';
-    grid[2][3] = '#';
-    grid[2][4] = '#';
-    grid[2][6] = '#';
-    grid[2][8] = '#';
-    grid[2][9] = '#';
-    grid[2][10] = '#';
-    grid[3][6] = '#';
-    grid[3][10] = '#';
-    grid[4][2] = '#';
-    grid[4][3] = '#';
-    grid[4][4] = '#';
-    grid[4][5] = '#';
-    grid[4][6] = '#';
-    grid[4][8] = '#';
-    grid[4][9] = '#';
-    grid[4][10] = '#';
-    grid[6][2] = '#';
-    grid[6][3] = '#';
-    grid[6][4] = '#';
-    grid[6][5] = '#';
-    grid[6][6] = '#';
-    grid[6][8] = '#';
-    grid[6][10] = '#';
-    grid[7][8] = '#';
-    grid[7][10] = '#';
-    grid[8][1] = '#';
-    grid[8][2] = '#';
-    grid[8][4] = '#';
-    grid[8][6] = '#';
-    grid[8][7] = '#';
-    grid[8][8] = '#';
-    grid[8][10] = '#';
-    grid[9][4] = '#';
-    grid[10][2] = '#';
-    grid[10][3] = '#';
-    grid[10][4] = '#';
-    grid[10][6] = '#';
-    grid[10][7] = '#';
-    grid[10][8] = '#';
-    grid[10][9] = '#';
-    grid[10][10] = '#';
-
-    grid[0][1] = 'T';
-    grid[5][2] = 'A';
-    grid[6][1] = 'B';
-    grid[4][7] = 'C';
-    grid[8][3] = 'D';
-    grid[6][7] = 'E';
-    grid[4][11] = 'F';
-    grid[10][1] = 'G';
-    grid[8][5] = 'H';
-    grid[9][8] = 'J';
-    grid[6][9] = 'K';
-    grid[6][11] = 'L';
-    grid[11][10] = 'N';
-    grid[9][10] = 'P';
-    grid[3][4] = 'Q';
-    grid[1][6] = 'R';
-    grid[10][5] = 'X';
+int nacitajVstup() {
+    int i = 0;
+    while (i < MAX) {
+        int j = scanf("%30s\n", grid[i]);
+        if (j <= 0) {
+            return 0;
+        }
+        if (strlen(grid[i]) >= width)
+            width = strlen(grid[i]);
+        height++;
+        i++;
+    }
+    return 0;
 }
 
 void init() {
-    width = 13;
-    height = 13;
-    grid = (char **) malloc(sizeof(char *) * height);
-    int i;
-    for (i = 0; i < height; i++) {
-        grid[i] = (char *) malloc(sizeof(char) * width);
-        int j;
-        for (j = 0; j < width; j++) {
-            grid[i][j] = '.';
-            if (i * j == 0) {
-                grid[i][j] = '#';
-            }
-            if (i + 1 == height || j + 1 == width) {
-                grid[i][j] = '#';
-            }
-            if (i == 0 && j == 1) {
-                grid[i][j] = '.';
-            }
-        }
+    grid = (char **) malloc(sizeof(char *) * MAX);
+    int i, j;
+    for (i = 0; i < MAX; i++) {
+        grid[i] = (char *) malloc(sizeof(char) * MAX);
     }
     nacitajVstup();
 }
 
-void printGrid(char **grid, int vys, int sir) {
-    int i, j;
-    for (i = 0; i < vys; i++) {
-        for (j = 0; j < sir; j++) {
-            printf("%c", grid[i][j]);
-        }
-        printf("\n");
-    }
-}
+
 
 //funkcie pre rekurzivne prehladavanie
 
@@ -442,18 +449,24 @@ void vyfarbiNkrokov(char **lab, int vys, int sir, int n) {
     printGrid(lab, vys, sir);
 }
 
-int main(int argc, char const *argv[]) {
+int main() {
+    printf("\n");
+    printf("PECENJENAJLEPSI\n");
     init();//toto nam vytvori vstup
-
+    //printGrid(grid, width, height);
+    //char **a = printGrid(grid, width, height);
+    //printGrid(a, width*10, height*10);
+    obrazok("obrazok.bmp");
     //uloha 2
-    vyfarbiMiestnosti(grid, height, width);
+    //vyfarbiMiestnosti(grid, width, height);
+    //obrazok("miestnosti.bmp");
     //uloha 3
     //obrazok("obrazok.bmp");
-    init(); // premazavam to grid
-    statistika(grid, height, width);
+    //init(); // premazavam to grid
+    //statistika(grid, MAX, MAX);
     //3 uloha neposkodi grid takze netreba nic mazat
-    vyfarbiNkrokov(grid, height, width, 2);
-
+    vyfarbiNkrokov(grid, width, height, 2);
+    obrazok("kroky.bmp");
 
     // v podstate jedine co mas spravit je nahradit funkciu printGrid za nakresli do subora.
     // neviem mozno bude treba aj destruktor pre queue
